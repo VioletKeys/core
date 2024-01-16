@@ -38,7 +38,7 @@ impl Envelope {
         cipher.decrypt(nonce, payload)
     }
 
-    pub fn serialize(&self) -> Vec<u8> {
+    #[must_use] pub fn serialize(&self) -> Vec<u8> {
         let mut result = vec![0u8; 12 + self.ciphertext.len()];
         result[0..12].copy_from_slice(&self.nonce);
         result[12..].copy_from_slice(&self.ciphertext);
