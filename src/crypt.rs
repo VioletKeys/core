@@ -8,11 +8,11 @@ use aes_gcm_siv::{
     Aes256GcmSiv, Nonce,
 };
 
-pub fn encrypt(key: [u8; 32], data: Vec<u8>) -> Result<Vec<u8>, aes_gcm_siv::Error> {
+pub fn encrypt(key: [u8; 32], data: &[u8]) -> Result<Vec<u8>, aes_gcm_siv::Error> {
     let mut nonce = [0u8; 12]; // 96-bits; unique per message
     OsRng.fill_bytes(&mut nonce);
     let payload = Payload {
-        msg: data.as_ref(),
+        msg: data,
         aad: b"".as_ref(),
     };
     let cipher = Aes256GcmSiv::new(GenericArray::from_slice(&key));
@@ -23,7 +23,7 @@ pub fn encrypt(key: [u8; 32], data: Vec<u8>) -> Result<Vec<u8>, aes_gcm_siv::Err
     Ok(result)
 }
 
-pub fn decrypt(key: [u8; 32], crypt: Vec<u8>) -> Result<Vec<u8>, aes_gcm_siv::Error> {
+pub fn decrypt(key: [u8; 32], crypt: &[u8]) -> Result<Vec<u8>, aes_gcm_siv::Error> {
     if crypt.len() < 13 {
         return Err(aes_gcm_siv::Error);
     }
@@ -46,13 +46,13 @@ mod tests {
     #[test]
     fn encrypt_decrypt_test() {
         let mut key = [0u8; 32];
-        let data: Vec<u8> = vec![0, 1, 2, 3, 4, 5, 6, 7];
+        let data = vec![0, 1, 2, 3, 4, 5, 6, 7];
         OsRng.fill_bytes(&mut key);
-        let crypt = encrypt(key, data.clone()).unwrap();
+        let crypt = encrypt(key, data.as_slice()).unwrap();
         assert_ne!(data, crypt); // check the full response
         let cipher_data = crypt[12..].to_vec();
         assert_ne!(data, cipher_data); // check what we know to be the cipher data
-        let data2 = decrypt(key, crypt).unwrap();
+        let data2 = decrypt(key, crypt.as_slice()).unwrap();
         assert_eq!(data2, data); //results should be good.
     }
 
