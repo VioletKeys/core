@@ -10,6 +10,18 @@ use aes_gcm_siv::{
 
 const EMPTY_ARRAY: &[u8; 0] = &[];
 
+/// Encrypt a message with a key.
+/// Returns the nonce and the encrypted data.
+///
+/// # Arguments
+/// Key: 256 bit key used to encrypt the data
+/// Data: The data to be encrypted.
+///
+/// # Returns
+/// A vector of bytes containing the nonce and the encrypted data.
+///
+/// # Errors
+/// If the encryption fails, an error is returned.
 pub fn encrypt(key: [u8; 32], data: &[u8]) -> Result<Vec<u8>, aes_gcm_siv::Error> {
     let mut nonce = [0u8; 12]; // 96-bits; unique per message
     OsRng.fill_bytes(&mut nonce);
@@ -25,6 +37,17 @@ pub fn encrypt(key: [u8; 32], data: &[u8]) -> Result<Vec<u8>, aes_gcm_siv::Error
     Ok(result)
 }
 
+/// Decrypt a message with a key.
+///
+/// # Arguments
+/// Key: 256 bit key used to encrypt the data
+/// Crypt: The data to be decrypted.
+///
+/// # Returns
+/// A vector of bytes containing the decrypted data.
+///
+/// # Errors
+/// If the decryption fails, an error is returned.
 pub fn decrypt(key: [u8; 32], crypt: &[u8]) -> Result<Vec<u8>, aes_gcm_siv::Error> {
     if crypt.len() < 13 {
         return Err(aes_gcm_siv::Error);
