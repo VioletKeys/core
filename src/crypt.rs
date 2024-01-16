@@ -8,12 +8,14 @@ use aes_gcm_siv::{
     Aes256GcmSiv, Nonce,
 };
 
+const EMPTY_ARRAY: &[u8; 0] = &[];
+
 pub fn encrypt(key: [u8; 32], data: &[u8]) -> Result<Vec<u8>, aes_gcm_siv::Error> {
     let mut nonce = [0u8; 12]; // 96-bits; unique per message
     OsRng.fill_bytes(&mut nonce);
     let payload = Payload {
         msg: data,
-        aad: b"".as_ref(),
+        aad: EMPTY_ARRAY,
     };
     let cipher = Aes256GcmSiv::new(GenericArray::from_slice(&key));
     let cipher_data = cipher.encrypt(Nonce::from_slice(&nonce), payload)?;
@@ -29,11 +31,11 @@ pub fn decrypt(key: [u8; 32], crypt: &[u8]) -> Result<Vec<u8>, aes_gcm_siv::Erro
     }
     let mut nonce = [0u8; 12];
     nonce.copy_from_slice(&crypt[0..12]);
-    let cipher_data = crypt[12..].to_vec();
+    let cipher_data = &crypt[12..];
     let cipher = Aes256GcmSiv::new(GenericArray::from_slice(&key));
     let payload = Payload {
-        msg: cipher_data.as_ref(),
-        aad: b"".as_ref(),
+        msg: cipher_data,
+        aad: EMPTY_ARRAY,
     };
     cipher.decrypt(Nonce::from_slice(&nonce), payload)
 }
