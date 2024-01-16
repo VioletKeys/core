@@ -7,4 +7,8 @@ edition = "2021"
 
 [dependencies]
 aes-gcm-siv = "0.11.*"
+base64 = "0.*"
+serde = "1.*"
+serde_bytes = "0.*"
+slice_as_array = "1.*"
 uuid = { version = "*", features = ["v4", "serde"] }

@@ -5,9 +5,10 @@ use aes_gcm_siv::aead::rand_core::RngCore;
 /// Current implementation assumes no AAD usage.
 use aes_gcm_siv::{
     aead::{Aead, KeyInit, OsRng, Payload},
-    Aes256GcmSiv,
-    Nonce,
+    Aes256GcmSiv, Nonce,
 };
+use base64::prelude::BASE64_STANDARD;
+use base64::Engine;
 
 pub struct Envelope {
     pub nonce: [u8; 12],
@@ -38,12 +39,41 @@ impl Envelope {
         };
         cipher.decrypt(nonce, payload)
     }
+
+    pub fn serialize(&self) -> String {
+        let nonce = BASE64_STANDARD.encode(self.nonce);
+        let ciphertext = BASE64_STANDARD.encode(&self.ciphertext);
+        format!("{}:{}", nonce, ciphertext)
+    }
+
+    pub fn deserialize(s: &str) -> Result<Self, ()> {
+        let parts: Vec<&str> = s.split(':').collect();
+        let result = BASE64_STANDARD.decode(parts[0]).expect("nonce: bad decode");
+        let nonce: [u8; 12] = *slice_as_array!(result.as_slice(), [u8; 12])
+            .expect("nonce: bad hash length");
+        let ciphertext = BASE64_STANDARD
+            .decode(parts[1])
+            .expect("ciphertext: bad decode");
+        Ok(Self { nonce, ciphertext })
+    }
 }
 
 #[cfg(test)]
 mod tests {
 
     use super::*;
+
+    #[test]
+    fn envelope_serialize_test() {
+        let mut key = [0u8; 32];
+        let clear: Vec<u8> = vec![0, 1, 2, 3, 4, 5, 6, 7];
+        OsRng.fill_bytes(&mut key);
+        let envelope = Envelope::new(key, clear.clone()).unwrap();
+        let s = envelope.serialize();
+        let envelope2 = Envelope::deserialize(&s).unwrap();
+        assert_eq!(envelope2.nonce, envelope.nonce);
+        assert_eq!(envelope2.ciphertext, envelope.ciphertext);
+    }
 
     /// Test our Envelope implementation.
     #[test]
